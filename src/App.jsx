@@ -1,0 +1,48 @@
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import Navbar         from './components/Navbar'
+import LandingPage    from './pages/LandingPage'
+import ExplorePage    from './pages/ExplorePage'
+import LoginPage      from './pages/LoginPage'
+import SignupPage     from './pages/SignupPage'
+import Dashboard      from './pages/Dashboard'
+import CreateEvent    from './pages/CreateEventPage'
+import EventPage      from './pages/EventPage'
+import CheckoutPage   from './pages/CheckoutPage'
+import TicketConfirm  from './pages/TicketConfirmPage'
+import CheckInPage    from './pages/CheckInPage'
+
+function Protected({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return <div className="loading-screen"><div className="spinner"></div></div>
+  return user ? children : <Navigate to="/login" replace />
+}
+
+function AppRoutes() {
+  return (
+    <>
+      <Navbar />
+      <Routes>
+        <Route path="/"              element={<LandingPage />} />
+        <Route path="/explore"       element={<ExplorePage />} />
+        <Route path="/login"         element={<LoginPage />} />
+        <Route path="/signup"        element={<SignupPage />} />
+        <Route path="/event/:id"     element={<EventPage />} />
+        <Route path="/checkout/:id"  element={<CheckoutPage />} />
+        <Route path="/ticket/:id"    element={<TicketConfirm />} />
+        <Route path="/dashboard"     element={<Protected><Dashboard /></Protected>} />
+        <Route path="/create-event"  element={<Protected><CreateEvent /></Protected>} />
+        <Route path="/checkin"       element={<Protected><CheckInPage /></Protected>} />
+        <Route path="*"              element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+  )
+}

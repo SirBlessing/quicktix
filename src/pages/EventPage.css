@@ -1,0 +1,275 @@
+/* ──────────────────────────────────
+   src/pages/EventPage/EventPage.css
+────────────────────────────────── */
+
+.event-page {}
+
+.event-page__cover {
+  height: 240px;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.event-page__cover-emoji {
+  font-size: 80px;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.3));
+}
+
+.event-page__body {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+}
+
+.event-page__grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 28px;
+  margin-top: -20px;
+  align-items: start;
+}
+
+/* ── MAIN CARD ── */
+.event-page__main-card {
+  padding: 28px 28px 22px;
+  margin-bottom: 20px;
+}
+
+.event-page__badges {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.event-page__title {
+  font-size: clamp(22px, 4vw, 34px);
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 18px;
+  line-height: 1.2;
+}
+
+.event-page__meta {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.event-page__meta li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 15px;
+  color: var(--g600);
+  line-height: 1.5;
+}
+
+.event-page__meta-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.event-page__section-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 10px;
+}
+
+.event-page__description {
+  font-size: 15px;
+  color: var(--g600);
+  line-height: 1.75;
+}
+
+/* ── SHARE CARD ── */
+.event-page__share-card {
+  padding: 18px 20px;
+}
+
+.event-page__share-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 10px;
+}
+
+.event-page__share-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.event-page__share-btn {
+  font-size: 12px;
+  padding: 9px 8px;
+}
+
+/* ── ASIDE ── */
+.event-page__aside {
+  position: sticky;
+  top: 88px;
+}
+
+/* ── TICKET WIDGET ── */
+.event-page__ticket-widget {
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.event-page__price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
+.event-page__price-label {
+  font-size: 13px;
+  color: var(--g400);
+}
+
+.event-page__price-val {
+  font-family: var(--font-head);
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.event-page__availability {
+  margin-bottom: 20px;
+}
+
+.event-page__avail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--g400);
+  margin-bottom: 8px;
+}
+
+.event-page__spots--low {
+  color: var(--error);
+  font-weight: 600;
+}
+
+.event-page__avail-sub {
+  font-size: 12px;
+  color: var(--g400);
+  margin-top: 6px;
+}
+
+.event-page__buy-btn {
+  display: flex;
+  width: 100%;
+  text-align: center;
+  justify-content: center;
+  padding: 15px;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.event-page__secure {
+  font-size: 12px;
+  color: var(--g400);
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.event-page__qr-note {
+  background: var(--g100);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--g600);
+  text-align: center;
+}
+
+/* ── DETAIL MINI ── */
+.event-page__detail-mini {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.event-page__detail-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.event-page__detail-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.event-page__detail-lbl {
+  font-size: 11px;
+  color: var(--g400);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-bottom: 2px;
+}
+
+.event-page__detail-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  .event-page__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .event-page__aside {
+    position: static;
+    order: -1;
+  }
+}
+
+
+.event-page { min-height:calc(100vh - 70px); padding-bottom:88px; background:var(--l-bg); }
+.event-page__cover { height:260px; background:var(--d900); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
+.event-page__cover::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at center,rgba(249,115,22,.1) 0%,transparent 70%); }
+.event-page__cover-emoji { font-size:88px; position:relative; z-index:1; }
+.event-page__body { padding-top:0; }
+.event-page__grid { display:grid; grid-template-columns:1fr 350px; gap:28px; align-items:start; margin-top:-28px; }
+.event-page__details { display:flex; flex-direction:column; gap:18px; }
+.event-page__main-card { padding:30px 32px; }
+.event-page__badges { display:flex; gap:8px; margin-bottom:16px; }
+.event-page__title { font-size:clamp(24px,4vw,36px); font-weight:800; color:var(--lt-1); margin-bottom:22px; line-height:1.15; letter-spacing:-.5px; }
+.event-page__meta-list { display:flex; flex-direction:column; gap:12px; margin-bottom:24px; }
+.event-page__meta-item { display:flex; align-items:flex-start; gap:12px; font-size:15px; color:var(--lt-2); line-height:1.5; }
+.event-page__meta-icon { font-size:18px; flex-shrink:0; margin-top:1px; }
+.event-page__divider   { height:1px; background:var(--l-200); margin-bottom:24px; }
+.event-page__about-title { font-size:19px; font-weight:700; color:var(--lt-1); margin-bottom:12px; }
+.event-page__about       { font-size:15px; color:var(--lt-2); line-height:1.8; }
+.event-page__share { padding:20px 24px; }
+.event-page__share-title { font-size:14px; font-weight:600; color:var(--lt-1); margin-bottom:12px; }
+.event-page__share-btns  { display:flex; gap:8px; flex-wrap:wrap; }
+.event-page__share-btn { background:var(--l-100); border:none; border-radius:var(--rpill); padding:9px 16px; font-size:13px; font-weight:500; font-family:var(--ff-body); color:var(--lt-2); cursor:pointer; transition:all .2s; }
+.event-page__share-btn:hover { background:var(--orange); color:#fff; }
+.event-page__ticket-widget { position:sticky; top:88px; }
+.ticket-widget { padding:26px; }
+.ticket-widget__price-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
+.ticket-widget__price-label { font-size:11px; font-weight:700; color:var(--lt-3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; }
+.ticket-widget__price { font-family:var(--ff-head); font-size:36px; font-weight:800; line-height:1; }
+.ticket-widget__price--free { color:var(--teal); }
+.ticket-widget__price--paid { color:var(--orange); }
+.ticket-widget__availability { margin-bottom:22px; }
+.ticket-widget__avail-row { display:flex; justify-content:space-between; font-size:13px; color:var(--lt-3); margin-bottom:8px; }
+.ticket-widget__avail-count { font-size:12px; color:var(--lt-4); margin-top:6px; }
+.ticket-widget__cta    { font-size:16px; padding:16px; }
+.ticket-widget__secure { font-size:12px; color:var(--lt-3); text-align:center; margin-top:10px; }
+.ticket-widget__info   { background:var(--l-100); border-radius:var(--r12); padding:12px 16px; font-size:13px; color:var(--lt-2); text-align:center; margin-top:14px; }
+@media(max-width:900px){ .event-page__grid{grid-template-columns:1fr;} .event-page__ticket-widget{position:static;order:-1;} }
+@media(max-width:600px){ .event-page__cover{height:180px;} .event-page__cover-emoji{font-size:60px;} .event-page__main-card{padding:22px;} }
