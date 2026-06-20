@@ -24,7 +24,7 @@ export default function TicketConfirmPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    client.get(`/tickets/verify/${id}`)
+    client.get(`/tickets/${id}`)          // ← was /tickets/verify/${id} which doesn't exist
       .then(r => setTicket(r.data.ticket))
       .catch(() => {})
       .finally(() => setLoading(false))

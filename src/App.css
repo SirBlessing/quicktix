@@ -569,6 +569,15 @@ td { padding:12px 14px; border-bottom:1px solid var(--g50); color:var(--txt2); }
 .feed-footer { display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--dark-bdr2); padding-top:11px; margin-top:11px; }
 .feed-summary { font-size:13px; color:rgba(255,255,255,.3); }
 
+/* ── Widget share link (inside ticket-widget) ── */
+.widget-share-link  { margin-top:16px; border-top:1px solid var(--g100); padding-top:14px; }
+.widget-share-label { font-size:12px; font-weight:600; color:var(--txt3); margin-bottom:7px; text-transform:uppercase; letter-spacing:.4px; }
+.widget-link-row    { display:flex; gap:6px; }
+.widget-link-input  { flex:1; background:var(--g50); border:1.5px solid var(--g100); border-radius:var(--r8); padding:9px 12px; font-size:12px; font-family:'DM Sans',sans-serif; color:var(--txt2); outline:none; cursor:text; }
+.widget-link-input:focus { border-color:var(--orange); }
+.widget-copy-btn    { background:var(--g100); border:none; border-radius:var(--r8); padding:0 12px; font-size:16px; cursor:pointer; transition:background .2s; flex-shrink:0; }
+.widget-copy-btn:hover { background:var(--orange); }
+
 /* ── Responsive ────────────────────────────────────────── */
 @media (max-width: 900px) {
   .event-grid     { grid-template-columns:1fr; }
