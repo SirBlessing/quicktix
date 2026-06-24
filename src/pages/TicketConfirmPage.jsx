@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import client from '../api/client'
 import QRPlaceholder from '../components/QRPlaceholder'
+import EventCover from '../components/EventCover'
 
 const DEMO = {
   ticketId: 'QT-DEMO-A1B2C3',
@@ -14,7 +15,7 @@ const DEMO = {
     date: '2025-08-15',
     time: '09:00 AM',
     location: 'Eko Convention Centre, Victoria Island, Lagos',
-    coverImage: '🏛️'
+    coverImage: ''
   }
 }
 
@@ -75,7 +76,7 @@ export default function TicketConfirmPage() {
 
           {/* Body */}
           <div className="ticket-body">
-            <span className="ticket-event-emoji">{event.coverImage || '🎟️'}</span>
+            <EventCover src={event.coverImage} alt={event.title} size={56} className="ticket-event-emoji" />
             <h2 className="ticket-event-title">{event.title || 'Event'}</h2>
 
             <div className="ticket-meta-grid">

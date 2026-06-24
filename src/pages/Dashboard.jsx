@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts'
 import { useAuth } from '../context/AuthContext'
 import client from '../api/client'
+import EventCover from '../components/EventCover'
 
 const DEMO_EVENTS = [
-  { _id:'1', title:'Lagos Tech Summit 2025',     date:'2025-08-15', category:'Conference', price:15000, isFree:false, ticketsSold:847,  capacity:1200, coverImage:'🏛️', status:'published' },
-  { _id:'2', title:"Adunni's Owambe",            date:'2025-07-20', category:'Social',     price:0,     isFree:true,  ticketsSold:320,  capacity:500,  coverImage:'🎉', status:'published' },
-  { _id:'3', title:'RCCG Youth Convention',      date:'2025-09-01', category:'Church',     price:5000,  isFree:false, ticketsSold:2100, capacity:5000, coverImage:'⛪', status:'published' },
-  { _id:'4', title:'UI/UX Design Bootcamp',      date:'2025-07-10', category:'Training',   price:25000, isFree:false, ticketsSold:48,   capacity:60,   coverImage:'🎨', status:'published' },
+  { _id:'1', title:'Lagos Tech Summit 2025',     date:'2025-08-15', category:'Conference', price:15000, isFree:false, ticketsSold:847,  capacity:1200, coverImage:'', status:'published' },
+  { _id:'2', title:"Adunni's Owambe",            date:'2025-07-20', category:'Social',     price:0,     isFree:true,  ticketsSold:320,  capacity:500,  coverImage:'', status:'published' },
+  { _id:'3', title:'RCCG Youth Convention',      date:'2025-09-01', category:'Church',     price:5000,  isFree:false, ticketsSold:2100, capacity:5000, coverImage:'', status:'published' },
+  { _id:'4', title:'UI/UX Design Bootcamp',      date:'2025-07-10', category:'Training',   price:25000, isFree:false, ticketsSold:48,   capacity:60,   coverImage:'', status:'published' },
 ]
 const WEEKLY  = [{ n:'Mon',t:12},{ n:'Tue',t:28},{ n:'Wed',t:19},{ n:'Thu',t:45},{ n:'Fri',t:67},{ n:'Sat',t:89},{ n:'Sun',t:52}]
 const MONTHLY = [{ n:'Mar',r:124000},{ n:'Apr',r:189000},{ n:'May',r:215000},{ n:'Jun',r:342000},{ n:'Jul',r:289000}]
@@ -83,7 +84,7 @@ export default function Dashboard() {
           <div className="recent-list">
             {events.slice(0,3).map(e => (
               <div key={e._id} className="recent-row card" onClick={() => navigate(`/event/${e._id}`)}>
-                <span className="recent-emoji">{e.coverImage || '🎟️'}</span>
+                <EventCover src={e.coverImage} alt={e.title} size={44} className="recent-emoji" />
                 <div className="recent-info">
                   <p className="recent-title">{e.title}</p>
                   <p className="recent-meta">{new Date(e.date).toLocaleDateString('en-NG',{month:'short',day:'numeric',year:'numeric'})} · {e.location?.split(',')[0] || e.category}</p>
@@ -111,7 +112,7 @@ export default function Dashboard() {
             {events.map(e => (
               <div key={e._id} className="mgmt-card card">
                 <div className="mgmt-cover">
-                  <span>{e.coverImage || '🎟️'}</span>
+                  <EventCover src={e.coverImage} alt={e.title} />
                   <span className={`badge ${e.isFree ? 'badge-green' : 'badge-orange'}`}>{e.isFree ? 'Free' : `₦${e.price.toLocaleString()}`}</span>
                 </div>
                 <div className="mgmt-body">
@@ -121,6 +122,7 @@ export default function Dashboard() {
                   <p className="mgmt-spots">{e.ticketsSold} / {e.capacity} tickets</p>
                   <div className="mgmt-actions">
                     <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/event/${e._id}`)}>View</button>
+                    <button className="btn btn-outline btn-sm" onClick={() => navigate(`/edit-event/${e._id}`)}>Edit</button>
                     <button className="btn btn-primary btn-sm" onClick={() => navigate('/checkin')}>Check-In</button>
                   </div>
                 </div>

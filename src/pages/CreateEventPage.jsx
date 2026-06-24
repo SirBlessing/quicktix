@@ -1,20 +1,45 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import client from '../api/client'
 
 const CATS = ['Conference','Church','Social','Training','Concert','Workshop','Sports','Education','Other']
+const MAX_IMAGE_MB = 3
 
 export default function CreateEventPage() {
   const navigate = useNavigate()
+  const fileRef = useRef(null)
   const [step, setStep] = useState(1)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [imgError, setImgError] = useState('')
   const [form, setForm] = useState({
     title:'', description:'', category:'Conference', date:'', time:'', location:'',
     isFree:true, price:'', capacity:'', coverImage:'', tags:'', isOnline:false
   })
 
   const set = (k,v) => setForm(p => ({...p,[k]:v}))
+
+  const handleFile = (file) => {
+    setImgError('')
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setImgError('Please upload an image file (PNG, JPG or WEBP).')
+      return
+    }
+    if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+      setImgError(`Image must be under ${MAX_IMAGE_MB}MB.`)
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => set('coverImage', reader.result)
+    reader.onerror = () => setImgError('Could not read that file. Please try another image.')
+    reader.readAsDataURL(file)
+  }
+
+  const onDrop = (e) => {
+    e.preventDefault()
+    handleFile(e.dataTransfer.files?.[0])
+  }
 
   const publish = async () => {
     setError('')
@@ -56,6 +81,46 @@ export default function CreateEventPage() {
               <div className="form-group">
                 <label className="label">Event Title *</label>
                 <input className="input" placeholder="e.g. Lagos Tech Summit 2025" value={form.title} onChange={e=>set('title',e.target.value)} />
+              </div>
+
+              {/* ── Cover image upload ── */}
+              <div className="form-group">
+                <label className="label">Event Flyer / Cover Image</label>
+                {form.coverImage ? (
+                  <div className="upload-preview">
+                    <img src={form.coverImage} alt="Event cover preview" />
+                    <button
+                      type="button"
+                      className="upload-remove"
+                      onClick={() => { set('coverImage', ''); setImgError('') }}
+                    >
+                      ✕ Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className="upload-drop"
+                    onClick={() => fileRef.current?.click()}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={onDrop}
+                  >
+                    <svg className="upload-drop-icon" width="32" height="32" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 16V4m0 0L7 9m5-5l5 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <p className="upload-drop-text">Click to upload, or drag &amp; drop</p>
+                    <p className="upload-drop-hint">PNG, JPG or WEBP · max {MAX_IMAGE_MB}MB</p>
+                  </div>
+                )}
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  style={{display:'none'}}
+                  onChange={e => handleFile(e.target.files?.[0])}
+                />
+                {imgError && <p className="hint" style={{color:'#E53E3E'}}>{imgError}</p>}
+                <p className="hint">No flyer? No problem — we'll show a clean placeholder instead.</p>
               </div>
               <div className="row-2">
                 <div className="form-group">
@@ -128,6 +193,14 @@ export default function CreateEventPage() {
           {step === 3 && (
             <div>
               <p style={{fontSize:15,fontWeight:700,color:'var(--txt1)',marginBottom:18}}>Review Your Event</p>
+
+              {/* Flyer preview in review */}
+              {form.coverImage && (
+                <div className="review-cover">
+                  <img src={form.coverImage} alt="Event flyer preview" />
+                </div>
+              )}
+
               <div className="review-list">
                 {[
                   ['Title',       form.title||'—'],

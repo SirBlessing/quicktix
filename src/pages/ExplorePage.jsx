@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import client from '../api/client'
+import EventCover from '../components/EventCover'
 
 const CATS = ['All','Conference','Church','Social','Training','Concert','Workshop','Sports','Education']
 
@@ -10,7 +11,7 @@ function EventCard({ event, onClick }) {
   return (
     <div className="event-card" onClick={onClick}>
       <div className="event-cover">
-        <span className="event-emoji">{event.coverImage || '🎟️'}</span>
+        <EventCover src={event.coverImage?.startsWith('data:') || event.coverImage?.startsWith('http') ? event.coverImage : null} alt={event.title} />
         <span className={`badge ${event.isFree ? 'badge-green' : 'badge-orange'} event-price`}>
           {event.isFree ? 'FREE' : `₦${event.price.toLocaleString()}`}
         </span>

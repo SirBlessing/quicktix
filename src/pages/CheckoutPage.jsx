@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import client from '../api/client'
+import EventCover from '../components/EventCover'
 
-const DEMO = { _id:'1', title:'Lagos Tech Summit 2025', date:'2025-08-15', time:'09:00 AM', location:'Eko Convention Centre, VI', coverImage:'🏛️', isFree:false, price:15000, capacity:1200, ticketsSold:847 }
+const DEMO = { _id:'1', title:'Lagos Tech Summit 2025', date:'2025-08-15', time:'09:00 AM', location:'Eko Convention Centre, VI', coverImage:'', isFree:false, price:15000, capacity:1200, ticketsSold:847 }
 
 export default function CheckoutPage() {
   const { id } = useParams()
@@ -83,7 +84,7 @@ export default function CheckoutPage() {
             <div className="card order-card">
               <p className="checkout-card-title">Order Summary</p>
               <div className="order-event">
-                <span className="order-emoji">{event.coverImage || '🎟️'}</span>
+                <EventCover src={event.coverImage} alt={event.title} size={48} className="order-emoji" />
                 <div>
                   <p className="order-event-title">{event.title}</p>
                   <p className="order-event-meta">📅 {new Date(event.date).toLocaleDateString('en-NG',{month:'short',day:'numeric',year:'numeric'})}</p>

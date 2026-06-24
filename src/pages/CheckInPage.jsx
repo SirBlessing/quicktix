@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import client from '../api/client'
+import EventCover from '../components/EventCover'
 
 export default function CheckInPage() {
   const navigate = useNavigate()
@@ -114,7 +115,7 @@ export default function CheckInPage() {
         {/* Event selector */}
         <div className="checkin-event-row">
           <div className="checkin-event-info">
-            <span className="checkin-event-emoji">{currentEvent?.coverImage || '🎟️'}</span>
+            <EventCover src={currentEvent?.coverImage} alt={currentEvent?.title} size={40} dark className="checkin-event-emoji" />
             <div>
               <p className="checkin-event-title">{currentEvent?.title || 'No event selected'}</p>
               {currentEvent && (

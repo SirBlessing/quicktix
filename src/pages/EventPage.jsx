@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import client from '../api/client'
+import EventCover from '../components/EventCover'
 
-const DEMO = { _id:'1', title:'Lagos Tech Summit 2025', date:'2025-08-15', time:'09:00 AM', location:'Eko Convention Centre, Victoria Island, Lagos', category:'Conference', isFree:false, price:15000, ticketsSold:847, capacity:1200, coverImage:'🏛️', description:'The biggest tech conference in West Africa. Join 3,000+ developers, designers, and founders for two days of learning, building, and networking.', organizer:{ name:'Lagos Tech Community' }, status:'published' }
+const DEMO = { _id:'1', title:'Lagos Tech Summit 2025', date:'2025-08-15', time:'09:00 AM', location:'Eko Convention Centre, Victoria Island, Lagos', category:'Conference', isFree:false, price:15000, ticketsSold:847, capacity:1200, coverImage:'', description:'The biggest tech conference in West Africa. Join 3,000+ developers, designers, and founders for two days of learning, building, and networking.', organizer:{ name:'Lagos Tech Community' }, status:'published' }
 
 export default function EventPage() {
   const { id } = useParams()
@@ -54,8 +55,8 @@ export default function EventPage() {
 
   return (
     <div className="event-page fade-up">
-      <div className="event-cover">
-        <span className="event-cover-emoji">{event.coverImage || '🎟️'}</span>
+      <div className="event-banner">
+        <EventCover src={event.coverImage} alt={event.title} />
       </div>
 
       <div className="container">

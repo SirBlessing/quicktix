@@ -12,6 +12,7 @@ import CheckoutPage        from './pages/CheckoutPage'
 import PaymentVerifyPage   from './pages/PaymentVerifyPage'
 import TicketConfirm       from './pages/TicketConfirmPage'
 import CheckInPage         from './pages/CheckInPage'
+import EditEventPage       from './pages/EditEventPage'
 
 function Protected({ children }) {
   const { user, loading } = useAuth()
@@ -34,6 +35,7 @@ function AppRoutes() {
         <Route path="/ticket/:id"          element={<TicketConfirm />} />
         <Route path="/dashboard"     element={<Protected><Dashboard /></Protected>} />
         <Route path="/create-event"  element={<Protected><CreateEvent /></Protected>} />
+        <Route path="/edit-event/:id" element={<Protected><EditEventPage /></Protected>} />
         <Route path="/checkin"       element={<Protected><CheckInPage /></Protected>} />
         <Route path="*"              element={<Navigate to="/" replace />} />
       </Routes>
