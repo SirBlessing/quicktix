@@ -1,30 +1,46 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import './Auth.css'
+import { useAuth } from '../context/AuthContext'
+import client from '../api/client'
 
-function SignupPage({ setUser }) {
-  const navigate  = useNavigate()
-  const [form,    setForm]    = useState({ name: '', email: '', password: '', confirm: '' })
+export default function SignupPage() {
+  const navigate          = useNavigate()
+  const { login }         = useAuth()
+  const [form, setForm]   = useState({ name: '', email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault()
     if (!form.name || !form.email || !form.password) {
       setError('Please fill in all fields.')
       return
     }
-    if (form.password !== form.confirm) {
-      setError('Passwords do not match.')
+    if (form.password.length < 8) {
+      setError('Password must be at least 8 characters.')
       return
     }
     setError('')
     setLoading(true)
-    // TODO: replace with real API call → POST /api/auth/signup
-    setTimeout(() => {
-      setUser({ name: form.name, email: form.email })
+
+    try {
+      const res = await client.post('/auth/signup', {
+        name:     form.name.trim(),
+        email:    form.email.trim().toLowerCase(),
+        password: form.password
+      })
+
+      // Store token and update global auth state
+      localStorage.setItem('qt_token', res.data.token)
+      login(res.data.user, res.data.token)
       navigate('/dashboard')
-    }, 1200)
+
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Signup failed. Please check your connection and try again.'
+      setError(msg)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -34,13 +50,13 @@ function SignupPage({ setUser }) {
         <div className="auth-card__header">
           <div className="auth-logo">Q</div>
           <h1 className="auth-card__title">Create your account</h1>
-          <p className="auth-card__sub">Start hosting events in minutes — no card needed</p>
+          <p className="auth-card__sub">Start hosting events in minutes — it's free</p>
         </div>
 
         {error && (
           <div className="alert alert--error">
             <span className="alert__icon">⚠️</span>
-            <div><p className="alert__title">{error}</p></div>
+            <p className="alert__title">{error}</p>
           </div>
         )}
 
@@ -77,24 +93,14 @@ function SignupPage({ setUser }) {
               id="password"
               className="form-input"
               type="password"
-              placeholder="Min. 8 characters"
+              placeholder="At least 8 characters"
               value={form.password}
               onChange={e => setForm({ ...form, password: e.target.value })}
               autoComplete="new-password"
             />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="confirm">Confirm Password</label>
-            <input
-              id="confirm"
-              className="form-input"
-              type="password"
-              placeholder="Repeat your password"
-              value={form.confirm}
-              onChange={e => setForm({ ...form, confirm: e.target.value })}
-              autoComplete="new-password"
-            />
+            <p style={{ fontSize: 12, color: 'var(--txt3)', marginTop: 5 }}>
+              Min. 8 characters, must include at least one number
+            </p>
           </div>
 
           <button
@@ -102,7 +108,7 @@ function SignupPage({ setUser }) {
             className="btn btn--primary btn--full auth-form__submit"
             disabled={loading}
           >
-            {loading ? 'Creating account...' : 'Create Free Account'}
+            {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
 
@@ -119,5 +125,3 @@ function SignupPage({ setUser }) {
     </main>
   )
 }
-
-export default SignupPage

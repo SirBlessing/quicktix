@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import './Auth.css'
+import { useAuth } from '../context/AuthContext'
+import client from '../api/client'
 
-function LoginPage({ setUser }) {
-  const navigate = useNavigate()
-  const [form,    setForm]    = useState({ email: '', password: '' })
+export default function LoginPage() {
+  const navigate          = useNavigate()
+  const { login }         = useAuth()
+  const [form, setForm]   = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
     if (!form.email || !form.password) {
       setError('Please fill in all fields.')
@@ -16,11 +18,24 @@ function LoginPage({ setUser }) {
     }
     setError('')
     setLoading(true)
-    // TODO: replace with real API call → POST /api/auth/login
-    setTimeout(() => {
-      setUser({ name: 'Chidi Okeke', email: form.email })
+
+    try {
+      const res = await client.post('/auth/login', {
+        email:    form.email.trim().toLowerCase(),
+        password: form.password
+      })
+
+      // Store token and update global auth state
+      localStorage.setItem('qt_token', res.data.token)
+      login(res.data.user, res.data.token)
       navigate('/dashboard')
-    }, 1200)
+
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Login failed. Please check your connection and try again.'
+      setError(msg)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -36,9 +51,7 @@ function LoginPage({ setUser }) {
         {error && (
           <div className="alert alert--error">
             <span className="alert__icon">⚠️</span>
-            <div>
-              <p className="alert__title">{error}</p>
-            </div>
+            <p className="alert__title">{error}</p>
           </div>
         )}
 
@@ -59,7 +72,7 @@ function LoginPage({ setUser }) {
           <div className="form-group">
             <div className="auth-form__label-row">
               <label className="form-label" htmlFor="password">Password</label>
-              <a href="#" className="auth-form__forgot">Forgot password?</a>
+              <a href="/forgot-password" className="auth-form__forgot">Forgot password?</a>
             </div>
             <input
               id="password"
@@ -94,5 +107,3 @@ function LoginPage({ setUser }) {
     </main>
   )
 }
-
-export default LoginPage
