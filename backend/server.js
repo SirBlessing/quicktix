@@ -8,25 +8,20 @@ const rateLimit = require('express-rate-limit')
 
 const app = express()
 
-// ── CORS ──────────────────────────────────────────────────
-// List every frontend URL that should be allowed to call this API.
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  process.env.CLIENT_URL,
-].filter(Boolean)
-
+// ── CORS — allow your Netlify frontend ───────────────────
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (Postman, curl, mobile apps)
-    if (!origin) return callback(null, true)
-    if (allowedOrigins.includes(origin)) return callback(null, true)
-    callback(new Error(`CORS: origin ${origin} not allowed`))
-  },
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://quicktiks.netlify.app'
+  ],
   credentials: true,
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization']
 }))
+
+// Handle preflight for ALL routes
+app.options('*', cors())
 
 app.use(helmet())
 app.use(morgan('dev'))
@@ -43,14 +38,13 @@ app.use('/api/payments', require('./routes/payments'))
 
 app.get('/api/health', (_, res) => res.json({
   success: true,
-  message: 'QuickTix API running 🚀',
-  env: process.env.NODE_ENV
+  message: 'QuickTix API running 🚀'
 }))
 
 app.use((_, res) => res.status(404).json({ success: false, message: 'Route not found' }))
 app.use(require('./middleware/error'))
 
-// ── Connect DB then start server ──────────────────────────
+// ── Start ─────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000
 
 async function start() {
