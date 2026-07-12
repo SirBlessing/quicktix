@@ -628,3 +628,31 @@ td { padding:12px 14px; border-bottom:1px solid var(--g50); color:var(--txt2); }
   .stat-grid      { grid-template-columns:1fr; }
   .checkin-stats  { grid-template-columns:1fr 1fr; }
 }
+
+
+
+/* ── Add these lines to the bottom of your App.css ── */
+
+.empty-state {
+  text-align: center;
+  padding: 80px 24px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.empty-state__icon {
+  font-size: 56px;
+  display: block;
+  margin-bottom: 20px;
+}
+.empty-state__title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--txt1);
+  margin-bottom: 10px;
+}
+.empty-state__sub {
+  font-size: 15px;
+  color: var(--txt3);
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
