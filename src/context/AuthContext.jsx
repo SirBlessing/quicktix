@@ -1,18 +1,23 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import client from '../api/client'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  // Seed initial user from localStorage so the dashboard
-  // never flashes empty while /auth/me is in-flight
-  const [user,    setUser]    = useState(() => {
+  // Read user from localStorage immediately so the dashboard
+  // never flashes blank while we verify the token in the background
+  const [user, setUser] = useState(() => {
     try {
-      const stored = localStorage.getItem('qt_user')
-      return stored ? JSON.parse(stored) : null
+      const u = localStorage.getItem('qt_user')
+      return u ? JSON.parse(u) : null
     } catch { return null }
   })
   const [loading, setLoading] = useState(true)
+
+  // Track whether login() was just called in this session.
+  // If it was, we skip the /auth/me verification entirely —
+  // the server already gave us a fresh token, no need to re-check.
+  const justLoggedIn = useRef(false)
 
   useEffect(() => {
     const token = localStorage.getItem('qt_token')
@@ -22,28 +27,32 @@ export function AuthProvider({ children }) {
       return
     }
 
-    // Verify the token is still valid in the background
+    // Skip /auth/me if we literally just signed up or logged in
+    if (justLoggedIn.current) {
+      setLoading(false)
+      return
+    }
+
+    // Background token verification (for page refreshes)
     client.get('/auth/me')
       .then(res => {
         setUser(res.data.user)
-        // Keep localStorage in sync with latest user data
         localStorage.setItem('qt_user', JSON.stringify(res.data.user))
       })
       .catch(err => {
-        // ONLY log out if the server explicitly says token is invalid (401)
-        // Do NOT log out on network errors / Render cold-start timeouts
+        // Only clear session on a definitive "token rejected" (401).
+        // Network errors, Render cold-starts (503/504/timeout) → stay logged in.
         if (err.response?.status === 401) {
           localStorage.removeItem('qt_token')
           localStorage.removeItem('qt_user')
           setUser(null)
         }
-        // Any other error (network down, 500, timeout) → keep the user logged in
       })
       .finally(() => setLoading(false))
   }, [])
 
-  // Called right after a successful login or signup
   const login = (userData, token) => {
+    justLoggedIn.current = true        // skip /auth/me for this session
     localStorage.setItem('qt_token', token)
     localStorage.setItem('qt_user', JSON.stringify(userData))
     setUser(userData)
@@ -51,6 +60,7 @@ export function AuthProvider({ children }) {
   }
 
   const logout = () => {
+    justLoggedIn.current = false
     localStorage.removeItem('qt_token')
     localStorage.removeItem('qt_user')
     setUser(null)
