@@ -1,189 +1,226 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts'
 import { useAuth } from '../context/AuthContext'
 import client from '../api/client'
-import EventCover from '../components/EventCover'
-
-const DEMO_EVENTS = [
-  { _id:'1', title:'Lagos Tech Summit 2025',     date:'2025-08-15', category:'Conference', price:15000, isFree:false, ticketsSold:847,  capacity:1200, coverImage:'', status:'published' },
-  { _id:'2', title:"Adunni's Owambe",            date:'2025-07-20', category:'Social',     price:0,     isFree:true,  ticketsSold:320,  capacity:500,  coverImage:'', status:'published' },
-  { _id:'3', title:'RCCG Youth Convention',      date:'2025-09-01', category:'Church',     price:5000,  isFree:false, ticketsSold:2100, capacity:5000, coverImage:'', status:'published' },
-  { _id:'4', title:'UI/UX Design Bootcamp',      date:'2025-07-10', category:'Training',   price:25000, isFree:false, ticketsSold:48,   capacity:60,   coverImage:'', status:'published' },
-]
-const WEEKLY  = [{ n:'Mon',t:12},{ n:'Tue',t:28},{ n:'Wed',t:19},{ n:'Thu',t:45},{ n:'Fri',t:67},{ n:'Sat',t:89},{ n:'Sun',t:52}]
-const MONTHLY = [{ n:'Mar',r:124000},{ n:'Apr',r:189000},{ n:'May',r:215000},{ n:'Jun',r:342000},{ n:'Jul',r:289000}]
 
 export default function Dashboard() {
-  const [tab,    setTab]    = useState('overview')
-  const [events, setEvents] = useState(DEMO_EVENTS)
-  const [stats,  setStats]  = useState({ totalEvents:4, totalTickets:3315, totalRevenue:18200000, checkInRate:85 })
-  const { user, logout }    = useAuth()
-  const navigate = useNavigate()
+  const navigate         = useNavigate()
+  const { user, logout } = useAuth()
+  const [tab,     setTab]     = useState('overview')
+  const [events,  setEvents]  = useState([])
+  const [stats,   setStats]   = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(false)
 
   useEffect(() => {
-    client.get('/events/my').then(r => { if(r.data.events.length) setEvents(r.data.events) }).catch(()=>{})
-    client.get('/events/dashboard-stats').then(r => setStats(r.data.stats)).catch(()=>{})
+    Promise.all([
+      client.get('/events/my'),
+      client.get('/events/dashboard-stats')
+    ])
+      .then(([evRes, stRes]) => {
+        setEvents(evRes.data.events || [])
+        setStats(stRes.data.stats   || null)
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false))
   }, [])
 
-  const first = (user?.name || 'Organizer').split(' ')[0]
+  const handleLogout = () => { logout(); navigate('/login') }
 
   return (
-    <div className="dash-layout">
-      {/* SIDEBAR */}
-      <aside className="sidebar">
-        <div className="sidebar-profile">
-          <div className="sidebar-avatar">{first[0]}</div>
-          <div>
-            <p className="sidebar-name">{user?.name || 'Organizer'}</p>
-            <p className="sidebar-email">{user?.email || ''}</p>
-          </div>
+    <div style={{ minHeight: '100vh', background: '#F7F5FF', fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* Top bar */}
+      <header style={{ background: '#0D0B1A', padding: '0 32px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 36, height: 36, background: '#FF5C00', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff', fontSize: 18 }}>Q</div>
+          <span style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>QuickTix</span>
         </div>
-        <nav className="sidebar-nav">
-          {[['overview','📊','Overview'],['my-events','🎟️','My Events'],['analytics','📈','Analytics']].map(([id,icon,label]) => (
-            <button key={id} className={`sidebar-link ${tab===id?'active':''}`} onClick={() => setTab(id)}>
-              <span>{icon}</span>{label}
-            </button>
-          ))}
-          <div className="sidebar-divider" />
-          <button className="sidebar-link" onClick={() => navigate('/checkin')}>
-            <span>📱</span>Check-In Tool
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ color: 'rgba(255,255,255,.6)', fontSize: 14 }}>
+            {user?.email}
+          </span>
+          <button onClick={handleLogout} style={{ background: 'rgba(255,255,255,.1)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: 50, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Log out
           </button>
-        </nav>
-        <button className="btn btn-primary btn-full sidebar-create" onClick={() => navigate('/create-event')}>
-          + Create Event
-        </button>
-      </aside>
+        </div>
+      </header>
 
-      {/* MAIN */}
-      <main className="dash-main fade-up">
-        {/* OVERVIEW */}
-        {tab === 'overview' && <>
-          <div className="dash-header">
-            <h2 className="dash-title">Good day, {first} 👋</h2>
-            <p className="dash-sub">Here's what's happening with your events</p>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '36px 24px 80px' }}>
+
+        {/* Greeting */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0D0B1A', margin: 0 }}>
+              Hey, {user?.name?.split(' ')[0] || 'there'} 👋
+            </h1>
+            <p style={{ color: '#9E9788', fontSize: 14, marginTop: 4 }}>
+              Here's what's happening with your events
+            </p>
           </div>
-          <div className="stat-grid">
+          <button
+            onClick={() => navigate('/create-event')}
+            style={{ background: '#FF5C00', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 50, fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            + Create Event
+          </button>
+        </div>
+
+        {/* Loading */}
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '80px 0' }}>
+            <div style={{ width: 40, height: 40, border: '3px solid #E8E4DA', borderTopColor: '#FF5C00', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
+            <p style={{ color: '#9E9788', marginTop: 16, fontSize: 14 }}>Loading your dashboard…</p>
+          </div>
+        )}
+
+        {/* Error */}
+        {!loading && error && (
+          <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 16, padding: '24px', textAlign: 'center', color: '#E53E3E' }}>
+            <p style={{ fontWeight: 700, marginBottom: 8 }}>Could not load your events</p>
+            <p style={{ fontSize: 14 }}>Check your internet connection and refresh the page.</p>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && !error && events.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '80px 24px', maxWidth: 420, margin: '0 auto' }}>
+            <div style={{ fontSize: 64, marginBottom: 20 }}>🎟️</div>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0D0B1A', marginBottom: 10 }}>
+              No events yet
+            </h2>
+            <p style={{ color: '#9E9788', fontSize: 15, lineHeight: 1.6, marginBottom: 28 }}>
+              Create your first event and start selling tickets in minutes. It's free to get started.
+            </p>
+            <button
+              onClick={() => navigate('/create-event')}
+              style={{ background: '#FF5C00', color: '#fff', border: 'none', padding: '14px 32px', borderRadius: 50, fontWeight: 700, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              + Create Your First Event
+            </button>
+          </div>
+        )}
+
+        {/* Stats — only when user has events */}
+        {!loading && !error && events.length > 0 && stats && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px,1fr))', gap: 16, marginBottom: 36 }}>
             {[
-              { label:'Total Events',    value: stats.totalEvents,                icon:'🎟️', chg:'+1 this month' },
-              { label:'Tickets Sold',    value: (stats.totalTickets||0).toLocaleString(), icon:'✅', chg:'+89 this week' },
-              { label:'Revenue',         value: `₦${((stats.totalRevenue||0)/1000000).toFixed(1)}M`, icon:'💰', chg:'+₦342K this week' },
-              { label:'Check-In Rate',   value: `${stats.checkInRate||0}%`, icon:'📱', chg:'avg across events' },
+              { label: 'TOTAL EVENTS',   value: stats.totalEvents  ?? 0,   sub: 'events created',      color: '#FF5C00' },
+              { label: 'TICKETS SOLD',   value: (stats.totalTickets ?? 0).toLocaleString(), sub: 'total registrations', color: '#7C3AED' },
+              { label: 'REVENUE',        value: `₦${((stats.totalRevenue ?? 0)/1000).toFixed(0)}K`, sub: 'total earned', color: '#059669' },
+              { label: 'CHECK-IN RATE',  value: `${stats.checkInRate ?? 0}%`, sub: 'avg across events', color: '#FF5C00' },
             ].map(s => (
-              <div key={s.label} className="stat-card card">
-                <div className="stat-top">
-                  <span className="stat-lbl">{s.label}</span>
-                  <span className="stat-icon">{s.icon}</span>
-                </div>
-                <p className="stat-val">{s.value}</p>
-                <p className="stat-chg">{s.chg}</p>
+              <div key={s.label} style={{ background: '#fff', borderRadius: 20, padding: '22px 24px', border: `1.5px solid ${s.color}22` }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#9E9788', letterSpacing: '.5px', marginBottom: 10 }}>{s.label}</p>
+                <p style={{ fontSize: 32, fontWeight: 800, color: '#0D0B1A', margin: '0 0 4px' }}>{s.value}</p>
+                <p style={{ fontSize: 13, color: s.color, fontWeight: 600 }}>{s.sub}</p>
               </div>
             ))}
           </div>
-          <div className="sec-row"><span className="sec-label">Recent Events</span><button className="see-all" onClick={() => setTab('my-events')}>View all →</button></div>
-          <div className="recent-list">
-            {events.slice(0,3).map(e => (
-              <div key={e._id} className="recent-row card" onClick={() => navigate(`/event/${e._id}`)}>
-                <EventCover src={e.coverImage} alt={e.title} size={44} className="recent-emoji" />
-                <div className="recent-info">
-                  <p className="recent-title">{e.title}</p>
-                  <p className="recent-meta">{new Date(e.date).toLocaleDateString('en-NG',{month:'short',day:'numeric',year:'numeric'})} · {e.location?.split(',')[0] || e.category}</p>
-                </div>
-                <div className="recent-right">
-                  <span className="recent-count">{e.ticketsSold.toLocaleString()}</span>
-                  <span className="recent-count-lbl">tickets</span>
-                </div>
-                <span className="badge badge-green">Active</span>
-              </div>
-            ))}
-          </div>
-        </>}
+        )}
 
-        {/* MY EVENTS */}
-        {tab === 'my-events' && <>
-          <div className="dash-header-row dash-header">
-            <div>
-              <h2 className="dash-title">My Events</h2>
-              <p className="dash-sub">Manage all your created events</p>
+        {/* Tabs */}
+        {!loading && !error && events.length > 0 && (
+          <>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 24, background: '#fff', borderRadius: 50, padding: 4, width: 'fit-content', border: '1px solid #E8E4DA' }}>
+              {['overview', 'my-events'].map(t => (
+                <button key={t} onClick={() => setTab(t)} style={{ padding: '8px 20px', borderRadius: 50, border: 'none', fontFamily: 'inherit', fontWeight: 600, fontSize: 14, cursor: 'pointer', background: tab === t ? '#FF5C00' : 'transparent', color: tab === t ? '#fff' : '#9E9788', transition: 'all .2s' }}>
+                  {t === 'overview' ? 'Overview' : 'My Events'}
+                </button>
+              ))}
             </div>
-            <button className="btn btn-primary" onClick={() => navigate('/create-event')}>+ New Event</button>
-          </div>
-          <div className="mgmt-grid">
-            {events.map(e => (
-              <div key={e._id} className="mgmt-card card">
-                <div className="mgmt-cover">
-                  <EventCover src={e.coverImage} alt={e.title} />
-                  <span className={`badge ${e.isFree ? 'badge-green' : 'badge-orange'}`}>{e.isFree ? 'Free' : `₦${e.price.toLocaleString()}`}</span>
+
+            {/* Overview tab */}
+            {tab === 'overview' && (
+              <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', border: '1px solid #E8E4DA' }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid #E8E4DA', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h2 style={{ fontSize: 17, fontWeight: 700, color: '#0D0B1A', margin: 0 }}>Recent Events</h2>
+                  <button onClick={() => setTab('my-events')} style={{ background: 'none', border: 'none', color: '#FF5C00', fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>View all →</button>
                 </div>
-                <div className="mgmt-body">
-                  <p className="mgmt-title">{e.title}</p>
-                  <p className="mgmt-meta">📅 {new Date(e.date).toLocaleDateString('en-NG',{month:'short',day:'numeric'})} · {e.category}</p>
-                  <div className="prog" style={{marginBottom:6}}><div className="prog-fill" style={{width:`${Math.round(e.ticketsSold/e.capacity*100)}%`}} /></div>
-                  <p className="mgmt-spots">{e.ticketsSold} / {e.capacity} tickets</p>
-                  <div className="mgmt-actions">
-                    <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/event/${e._id}`)}>View</button>
-                    <button className="btn btn-outline btn-sm" onClick={() => navigate(`/edit-event/${e._id}`)}>Edit</button>
-                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/checkin')}>Check-In</button>
+                {events.slice(0, 5).map((e, i) => (
+                  <div key={e._id} onClick={() => navigate(`/event/${e._id}`)} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', borderBottom: i < Math.min(events.length,5)-1 ? '1px solid #F5F3EE' : 'none', cursor: 'pointer', transition: 'background .15s' }}
+                    onMouseEnter={el => el.currentTarget.style.background = '#FAFAF8'}
+                    onMouseLeave={el => el.currentTarget.style.background = 'transparent'}
+                  >
+                    <div style={{ width: 44, height: 44, background: '#F5F3EE', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                      {e.coverImage
+                        ? <img src={e.coverImage} alt={e.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#C4BFB0" strokeWidth="1.5"/><circle cx="8.5" cy="8.5" r="1.5" fill="#C4BFB0"/><path d="M21 15l-5-5L5 21" stroke="#C4BFB0" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                      }
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 700, color: '#0D0B1A', fontSize: 15, margin: '0 0 3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.title}</p>
+                      <p style={{ color: '#9E9788', fontSize: 13, margin: 0 }}>
+                        {new Date(e.date).toLocaleDateString('en-NG', { day:'numeric', month:'short', year:'numeric' })} · {e.category}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <p style={{ fontWeight: 700, color: '#0D0B1A', fontSize: 15, margin: '0 0 4px' }}>
+                        {(e.ticketsSold || 0).toLocaleString()} <span style={{ fontWeight: 400, color: '#9E9788', fontSize: 13 }}>tickets</span>
+                      </p>
+                      <span style={{ background: e.status === 'published' ? '#D1FAE5' : '#F3F4F6', color: e.status === 'published' ? '#059669' : '#6B7280', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 50 }}>
+                        {e.status?.toUpperCase()}
+                      </span>
+                    </div>
                   </div>
+                ))}
+              </div>
+            )}
+
+            {/* My Events tab */}
+            {tab === 'my-events' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                  <h2 style={{ fontSize: 17, fontWeight: 700, color: '#0D0B1A', margin: 0 }}>My Events</h2>
+                  <button onClick={() => navigate('/create-event')} style={{ background: '#FF5C00', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 50, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    + New Event
+                  </button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 18 }}>
+                  {events.map(e => {
+                    const pct = Math.round(((e.ticketsSold||0) / e.capacity) * 100)
+                    return (
+                      <div key={e._id} style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', border: '1px solid #E8E4DA' }}>
+                        <div style={{ height: 100, background: '#0D0B1A', position: 'relative', overflow: 'hidden' }}>
+                          {e.coverImage
+                            ? <img src={e.coverImage} alt={e.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                            : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="rgba(255,255,255,.2)" strokeWidth="1.5"/><circle cx="8.5" cy="8.5" r="1.5" fill="rgba(255,255,255,.2)"/><path d="M21 15l-5-5L5 21" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                              </div>
+                          }
+                          <span style={{ position:'absolute', top:10, right:12, background: e.isFree ? '#059669' : '#FF5C00', color:'#fff', fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:50 }}>
+                            {e.isFree ? 'Free' : `₦${(e.price||0).toLocaleString()}`}
+                          </span>
+                        </div>
+                        <div style={{ padding: '16px 18px' }}>
+                          <p style={{ fontWeight: 700, color: '#0D0B1A', fontSize: 15, margin: '0 0 4px' }}>{e.title}</p>
+                          <p style={{ color: '#9E9788', fontSize: 13, margin: '0 0 12px' }}>
+                            {new Date(e.date).toLocaleDateString('en-NG',{day:'numeric',month:'short',year:'numeric'})} · {e.category}
+                          </p>
+                          <div style={{ background: '#F5F3EE', borderRadius: 50, height: 6, marginBottom: 6, overflow: 'hidden' }}>
+                            <div style={{ width: `${pct}%`, height: '100%', background: '#FF5C00', borderRadius: 50, transition: 'width .3s' }} />
+                          </div>
+                          <p style={{ fontSize: 12, color: '#9E9788', margin: '0 0 14px' }}>
+                            {(e.ticketsSold||0).toLocaleString()} sold · {(e.capacity - (e.ticketsSold||0)).toLocaleString()} remaining
+                          </p>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={() => navigate(`/event/${e._id}`)} style={{ flex:1, background:'#F5F3EE', border:'none', borderRadius:50, padding:'8px 0', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', color:'#4A4560' }}>View</button>
+                            <button onClick={() => navigate(`/edit-event/${e._id}`)} style={{ flex:1, background:'#F5F3EE', border:'none', borderRadius:50, padding:'8px 0', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', color:'#4A4560' }}>Edit</button>
+                            <button onClick={() => navigate('/checkin')} style={{ flex:1, background:'#FF5C00', border:'none', borderRadius:50, padding:'8px 0', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', color:'#fff' }}>Check-In</button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
-            ))}
-          </div>
-        </>}
+            )}
+          </>
+        )}
 
-        {/* ANALYTICS */}
-        {tab === 'analytics' && <>
-          <div className="dash-header">
-            <h2 className="dash-title">Analytics</h2>
-            <p className="dash-sub">Track the performance of your events</p>
-          </div>
-          <div className="chart-grid">
-            <div className="chart-card card">
-              <p className="chart-title">Tickets Sold — This Week</p>
-              <ResponsiveContainer width="100%" height={190}>
-                <BarChart data={WEEKLY} barSize={20}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--g100)" vertical={false} />
-                  <XAxis dataKey="n" axisLine={false} tickLine={false} tick={{ fill:'var(--txt3)', fontSize:12 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill:'var(--txt3)', fontSize:12 }} />
-                  <Tooltip contentStyle={{ borderRadius:10, border:'none', boxShadow:'0 4px 16px rgba(0,0,0,.1)', fontFamily:'DM Sans,sans-serif', fontSize:13 }} cursor={{ fill:'rgba(255,92,0,.06)' }} />
-                  <Bar dataKey="t" fill="var(--orange)" radius={[4,4,0,0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="chart-card card">
-              <p className="chart-title">Monthly Revenue (₦)</p>
-              <ResponsiveContainer width="100%" height={190}>
-                <LineChart data={MONTHLY}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--g100)" vertical={false} />
-                  <XAxis dataKey="n" axisLine={false} tickLine={false} tick={{ fill:'var(--txt3)', fontSize:12 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill:'var(--txt3)', fontSize:12 }} tickFormatter={v=>`₦${(v/1000).toFixed(0)}K`} />
-                  <Tooltip formatter={v=>[`₦${v.toLocaleString()}`,'Revenue']} contentStyle={{ borderRadius:10, border:'none', boxShadow:'0 4px 16px rgba(0,0,0,.1)', fontFamily:'DM Sans,sans-serif', fontSize:13 }} />
-                  <Line type="monotone" dataKey="r" stroke="var(--dark)" strokeWidth={2.5} dot={{ fill:'var(--orange)', r:4, strokeWidth:0 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-          <div className="card" style={{overflow:'hidden'}}>
-            <div style={{padding:'18px 20px 0'}}><p className="chart-title">Event Breakdown</p></div>
-            <div className="tbl-wrap">
-              <table>
-                <thead><tr>{['Event','Category','Tickets','Revenue','Status'].map(h=><th key={h}>{h}</th>)}</tr></thead>
-                <tbody>
-                  {events.map(e => (
-                    <tr key={e._id}>
-                      <td className="td-name">{e.title.split(' ').slice(0,4).join(' ')}</td>
-                      <td><span className="badge badge-gray">{e.category}</span></td>
-                      <td>{e.ticketsSold.toLocaleString()}</td>
-                      <td className="td-rev">{e.isFree ? '—' : `₦${(e.ticketsSold*e.price).toLocaleString()}`}</td>
-                      <td><span className="badge badge-green">Active</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>}
-      </main>
+      </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 }
