@@ -3,25 +3,22 @@ import axios from 'axios'
 const RENDER_URL = 'https://quicktix-282n.onrender.com'
 
 const client = axios.create({
-  baseURL: `${RENDER_URL}/api`
+  baseURL: `${RENDER_URL}/api`,
+  headers: { 'Content-Type': 'application/json' }
 })
 
-client.interceptors.request.use(cfg => {
+client.interceptors.request.use(config => {
   const token = localStorage.getItem('qt_token')
-  if (token) cfg.headers.Authorization = `Bearer ${token}`
-  return cfg
-})
+  // Guard: don't send if token is missing, "undefined", or "null"
+  if (token && token !== 'undefined' && token !== 'null') {
+    config.headers['Authorization'] = `Bearer ${token}`
+  }
+  return config
+}, error => Promise.reject(error))
 
-// ── DO NOT redirect here on 401 ───────────────────────────
-// The old version did window.location.href = '/login' here.
-// That caused a hard page refresh 3 seconds after login because
-// AuthContext's /auth/me call returned 401 while Render was
-// waking up from sleep — and the interceptor fired before
-// AuthContext could handle it.
-// AuthContext now handles 401 itself in its catch block.
 client.interceptors.response.use(
-  res => res,
-  err => Promise.reject(err)
+  response => response,
+  error => Promise.reject(error)
 )
 
 export default client
