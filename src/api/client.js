@@ -7,18 +7,20 @@ const client = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
-client.interceptors.request.use(config => {
-  const token = localStorage.getItem('qt_token')
-  // Guard: don't send if token is missing, "undefined", or "null"
-  if (token && token !== 'undefined' && token !== 'null') {
-    config.headers['Authorization'] = `Bearer ${token}`
-  }
-  return config
-}, error => Promise.reject(error))
+// On page load — restore token from localStorage into axios default headers
+// This runs once when the module is imported, covering page refreshes
+const savedToken = localStorage.getItem('qt_token')
+if (savedToken && savedToken !== 'undefined' && savedToken !== 'null') {
+  client.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`
+}
 
-client.interceptors.response.use(
-  response => response,
-  error => Promise.reject(error)
-)
+// Call this after login/signup to update the header immediately
+export const setAuthToken = (token) => {
+  if (token && token !== 'undefined' && token !== 'null') {
+    client.defaults.headers.common['Authorization'] = `Bearer ${token}`
+  } else {
+    delete client.defaults.headers.common['Authorization']
+  }
+}
 
 export default client
