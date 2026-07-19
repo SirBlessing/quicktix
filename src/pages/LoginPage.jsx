@@ -16,7 +16,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const r = await client.post('/auth/login', form)
-      login(r.data.token, r.data.user)
+      login(r.data.user, r.data.token)   // ✅ fixed: user first, token second
       navigate('/dashboard')
     } catch(err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.')
@@ -40,14 +40,28 @@ export default function LoginPage() {
         <form className="auth-form" onSubmit={handle} noValidate>
           <div className="form-group">
             <label className="label-dark">Email Address</label>
-            <input className="input-dark" type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm({...form, email:e.target.value})} required />
+            <input
+              className="input-dark"
+              type="email"
+              placeholder="you@example.com"
+              value={form.email}
+              onChange={e => setForm({...form, email: e.target.value})}
+              required
+            />
           </div>
           <div className="form-group">
             <div className="auth-label-row">
               <label className="label-dark">Password</label>
               <button type="button" className="auth-forgot">Forgot password?</button>
             </div>
-            <input className="input-dark" type="password" placeholder="••••••••" value={form.password} onChange={e => setForm({...form, password:e.target.value})} required />
+            <input
+              className="input-dark"
+              type="password"
+              placeholder="••••••••"
+              value={form.password}
+              onChange={e => setForm({...form, password: e.target.value})}
+              required
+            />
           </div>
           <button type="submit" className="btn btn-primary btn-full" style={{padding:'14px'}} disabled={loading}>
             {loading ? 'Logging in...' : 'Log In'}

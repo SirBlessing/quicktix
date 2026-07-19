@@ -1,26 +1,17 @@
 import axios from 'axios'
 
-const RENDER_URL = 'https://quicktix-282n.onrender.com'
-
 const client = axios.create({
-  baseURL: `${RENDER_URL}/api`,
-  headers: { 'Content-Type': 'application/json' }
+  baseURL: 'https://quicktix-282n.onrender.com/api'
 })
 
-// On page load — restore token from localStorage into axios default headers
-// This runs once when the module is imported, covering page refreshes
-const savedToken = localStorage.getItem('qt_token')
-if (savedToken && savedToken !== 'undefined' && savedToken !== 'null') {
-  client.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`
-}
-
-// Call this after login/signup to update the header immediately
-export const setAuthToken = (token) => {
+// Reads token fresh from localStorage on EVERY request
+// This is the most reliable approach — no stale state possible
+client.interceptors.request.use(config => {
+  const token = localStorage.getItem('qt_token')
   if (token && token !== 'undefined' && token !== 'null') {
-    client.defaults.headers.common['Authorization'] = `Bearer ${token}`
-  } else {
-    delete client.defaults.headers.common['Authorization']
+    config.headers['Authorization'] = `Bearer ${token}`
   }
-}
+  return config
+}, error => Promise.reject(error))
 
 export default client
