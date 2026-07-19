@@ -1,35 +1,38 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import client from '../api/client'
-import EventCover from '../components/EventCover'
 
 export default function CheckInPage() {
-  const navigate = useNavigate()
-  const [events,       setEvents]       = useState([])
-  const [activeEvent,  setActiveEvent]  = useState(null)
-  const [stats,        setStats]        = useState({ totalExpected: 0, checkedIn: 0, remaining: 0, invalidScans: 0, checkInRate: 0 })
-  const [feed,         setFeed]         = useState([])
-  const [scanState,    setScanState]    = useState('idle') // idle | scanning | valid | invalid
-  const [resultMsg,    setResultMsg]    = useState('')
-  const [manualId,     setManualId]     = useState('')
-  const pollRef = useRef(null)
+  const navigate      = useNavigate()
+  const { user }      = useAuth()
+  const [events,      setEvents]      = useState([])
+  const [activeEvent, setActiveEvent] = useState('')
+  const [stats,       setStats]       = useState(null)
+  const [feed,        setFeed]        = useState([])
+  const [ticketId,    setTicketId]    = useState('')
+  const [result,      setResult]      = useState(null) // { valid, name, reason }
+  const [checking,    setChecking]    = useState(false)
+  const inputRef = useRef(null)
+  const pollRef  = useRef(null)
 
-  // Load organizer's events on mount
+  // Load organizer's events
   useEffect(() => {
     client.get('/events/my')
       .then(r => {
-        setEvents(r.data.events)
-        if (r.data.events.length) setActiveEvent(r.data.events[0]._id)
+        const evs = r.data.events || []
+        setEvents(evs)
+        if (evs.length) setActiveEvent(evs[0]._id)
       })
       .catch(() => {})
   }, [])
 
-  // Load stats + feed whenever active event changes, and poll every 8s
+  // Poll stats + feed when active event changes
   useEffect(() => {
     if (!activeEvent) return
     const load = () => {
       client.get(`/checkin/${activeEvent}/stats`).then(r => setStats(r.data.stats)).catch(() => {})
-      client.get(`/checkin/${activeEvent}/feed`).then(r => setFeed(r.data.feed)).catch(() => {})
+      client.get(`/checkin/${activeEvent}/feed`).then(r => setFeed(r.data.feed || [])).catch(() => {})
     }
     load()
     pollRef.current = setInterval(load, 8000)
@@ -38,58 +41,29 @@ export default function CheckInPage() {
 
   const currentEvent = events.find(e => e._id === activeEvent)
 
-  // ── Simulate a camera scan (in production, integrate a QR scanner lib
-  //    like html5-qrcode and call this same handler with the decoded data) ──
-  const simulateScan = async () => {
-    if (!activeEvent) return
-    setScanState('scanning')
-    setTimeout(async () => {
-      try {
-        // In production, qrData comes from the camera scanner.
-        // Here we just demo against the most recent ticket if available.
-        const fakeQrData = manualId || 'demo-qr-data'
-        const r = await client.post('/checkin/scan', { qrData: fakeQrData, eventId: activeEvent })
-        if (r.data.valid) {
-          setScanState('valid')
-          setResultMsg(r.data.attendee.name)
-          refreshAfterScan()
-        } else {
-          setScanState('invalid')
-          setResultMsg(r.data.reason)
-        }
-      } catch (err) {
-        setScanState('invalid')
-        setResultMsg(err.response?.data?.message || 'Scan failed.')
-      }
-      setTimeout(() => setScanState('idle'), 2500)
-    }, 1300)
-  }
-
-  const refreshAfterScan = () => {
-    client.get(`/checkin/${activeEvent}/stats`).then(r => setStats(r.data.stats)).catch(() => {})
-    client.get(`/checkin/${activeEvent}/feed`).then(r => setFeed(r.data.feed)).catch(() => {})
-  }
-
-  const handleManualLookup = async (e) => {
+  const checkIn = async (e) => {
     e.preventDefault()
-    if (!manualId.trim() || !activeEvent) return
-    setScanState('scanning')
+    if (!ticketId.trim() || !activeEvent) return
+    setChecking(true)
+    setResult(null)
     try {
-      const r = await client.post('/checkin/manual', { ticketId: manualId.trim(), eventId: activeEvent })
+      const r = await client.post('/checkin/manual', {
+        ticketId: ticketId.trim().toUpperCase(),
+        eventId:  activeEvent
+      })
+      setResult({ valid: r.data.valid, name: r.data.attendee?.name, reason: r.data.reason, checkedAt: r.data.checkedAt })
       if (r.data.valid) {
-        setScanState('valid')
-        setResultMsg(r.data.attendee.name)
-        refreshAfterScan()
-      } else {
-        setScanState('invalid')
-        setResultMsg(r.data.reason)
+        // Refresh stats after successful check-in
+        client.get(`/checkin/${activeEvent}/stats`).then(r => setStats(r.data.stats)).catch(() => {})
+        client.get(`/checkin/${activeEvent}/feed`).then(r => setFeed(r.data.feed || [])).catch(() => {})
       }
     } catch (err) {
-      setScanState('invalid')
-      setResultMsg(err.response?.data?.message || 'Lookup failed.')
+      setResult({ valid: false, reason: err.response?.data?.message || 'Check-in failed. Try again.' })
+    } finally {
+      setChecking(false)
+      setTicketId('')
+      inputRef.current?.focus()
     }
-    setManualId('')
-    setTimeout(() => setScanState('idle'), 2500)
   }
 
   return (
@@ -102,10 +76,10 @@ export default function CheckInPage() {
             <div className="checkin-logo">Q</div>
             <span className="checkin-name">QuickTix</span>
             <span className="checkin-divider">|</span>
-            <span className="checkin-mode">Check-In Mode</span>
+            <span className="checkin-mode">Check-In</span>
           </div>
           <button className="btn btn-ghost-dark btn-sm" onClick={() => navigate('/dashboard')}>
-            ← Exit to Dashboard
+            ← Dashboard
           </button>
         </div>
       </header>
@@ -113,143 +87,145 @@ export default function CheckInPage() {
       <div className="checkin-body">
 
         {/* Event selector */}
-        <div className="checkin-event-row">
-          <div className="checkin-event-info">
-            <EventCover src={currentEvent?.coverImage} alt={currentEvent?.title} size={40} dark className="checkin-event-emoji" />
-            <div>
-              <p className="checkin-event-title">{currentEvent?.title || 'No event selected'}</p>
-              {currentEvent && (
-                <p className="checkin-event-meta">
-                  📅 {new Date(currentEvent.date).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  {' · '}📍 {currentEvent.location?.split(',')[0]}
-                </p>
-              )}
-            </div>
-          </div>
-          {events.length > 0 && (
-            <select className="checkin-select" value={activeEvent || ''} onChange={e => setActiveEvent(e.target.value)}>
-              {events.map(ev => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
-            </select>
-          )}
-        </div>
-
-        {/* Stats */}
-        <div className="checkin-stats">
-          {[
-            { icon: '✅', label: 'Checked In',     value: stats.checkedIn,     color: 'var(--teal)' },
-            { icon: '🎟️', label: 'Total Expected', value: stats.totalExpected, color: '#fff' },
-            { icon: '❌', label: 'Invalid Scans',  value: stats.invalidScans,  color: 'var(--red)' },
-            { icon: '📊', label: 'Check-In Rate',  value: `${stats.checkInRate}%`, color: 'var(--orange)' },
-          ].map(s => (
-            <div key={s.label} className="checkin-stat">
-              <span className="checkin-stat-icon">{s.icon}</span>
-              <div>
-                <p className="checkin-stat-val" style={{ color: s.color }}>{s.value}</p>
-                <p className="checkin-stat-lbl">{s.label}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Progress */}
-        <div className="checkin-prog-card">
-          <div className="checkin-prog-text">
-            <span>Overall attendance progress</span>
-            <span className="checkin-prog-pct">{stats.checkInRate}%</span>
-          </div>
-          <div className="prog-dark">
-            <div className="prog-fill prog-fill-green" style={{ width: `${stats.checkInRate}%` }} />
-          </div>
-          <p className="checkin-prog-sub">
-            {stats.checkedIn.toLocaleString()} checked in of {stats.totalExpected.toLocaleString()} expected
-          </p>
-        </div>
-
-        {/* Main two-column */}
-        <div className="checkin-main">
-
-          {/* Scanner */}
-          <div className="scanner-panel">
-            <h2 className="scanner-title">QR Scanner</h2>
-
-            <div className={`viewfinder ${scanState !== 'idle' ? scanState : ''}`}>
-              {scanState === 'idle' && (
-                <div className="vf-idle">
-                  <div className="vf-corner vf-tl" /><div className="vf-corner vf-tr" />
-                  <div className="vf-corner vf-bl" /><div className="vf-corner vf-br" />
-                  <span className="vf-cam">📷</span>
-                  <p className="vf-hint">Camera ready</p>
-                  <p className="vf-hint vf-hint-sm">Point at attendee QR code</p>
-                </div>
-              )}
-              {scanState === 'scanning' && (
-                <div className="vf-scanning">
-                  <div className="scan-line" />
-                  <span className="vf-cam">🔍</span>
-                  <p className="vf-hint">Scanning...</p>
-                </div>
-              )}
-              {scanState === 'valid' && (
-                <div className="vf-result vf-valid">
-                  <span className="vf-result-icon">✅</span>
-                  <p className="vf-result-title">Ticket Valid!</p>
-                  <p className="vf-result-sub">{resultMsg}</p>
-                </div>
-              )}
-              {scanState === 'invalid' && (
-                <div className="vf-result vf-invalid">
-                  <span className="vf-result-icon">❌</span>
-                  <p className="vf-result-title">Invalid Ticket</p>
-                  <p className="vf-result-sub">{resultMsg}</p>
-                </div>
-              )}
-            </div>
-
-            <button className="btn btn-primary btn-full scanner-btn" onClick={simulateScan} disabled={scanState === 'scanning' || !activeEvent}>
-              {scanState === 'scanning' ? '⏳ Scanning...' : '📱 Scan QR Code'}
+        {events.length === 0 ? (
+          <div style={{ textAlign:'center', padding:'60px 24px', color:'rgba(255,255,255,.5)' }}>
+            <p style={{ fontSize:32, marginBottom:12 }}>📭</p>
+            <p>No events found. Create an event first.</p>
+            <button className="btn btn-primary" style={{ marginTop:16 }} onClick={() => navigate('/create-event')}>
+              Create Event
             </button>
-            <p className="scanner-note">In production this opens your device camera for live QR scanning.</p>
-
-            {/* Manual lookup */}
-            <form className="manual-lookup" onSubmit={handleManualLookup}>
-              <p className="manual-title">Manual Ticket Lookup</p>
-              <div className="manual-row">
-                <input
-                  className="input"
-                  placeholder="e.g. QT-2025-A3X9B"
-                  value={manualId}
-                  onChange={e => setManualId(e.target.value)}
-                />
-                <button type="submit" className="btn btn-outline" disabled={!activeEvent}>Check</button>
-              </div>
-            </form>
           </div>
-
-          {/* Live feed */}
-          <div className="scan-feed">
-            <div className="feed-header">
-              <h2 className="feed-title">Recent Scans</h2>
-              <span className="badge badge-dark">{feed.length} total</span>
-            </div>
-            <div className="feed-list">
-              {feed.length === 0 && <p style={{ color: 'rgba(255,255,255,.3)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>No check-ins yet</p>}
-              {feed.map((entry, i) => (
-                <div key={i} className={`feed-entry ${entry.status}`}>
-                  <span className="feed-icon">{entry.status === 'valid' ? '✅' : '❌'}</span>
-                  <div className="feed-info">
-                    <p className="feed-name">{entry.name}</p>
-                    <p className="feed-id">{entry.id}</p>
-                  </div>
-                  <span className="feed-time">{new Date(entry.checkedInAt).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })}</span>
+        ) : (
+          <>
+            <div className="checkin-event-row">
+              <div className="checkin-event-info">
+                <div style={{ width:40, height:40, background:'rgba(255,255,255,.1)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, overflow:'hidden' }}>
+                  {currentEvent?.coverImage
+                    ? <img src={currentEvent.coverImage} alt={currentEvent.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                    : <span style={{ fontSize:18 }}>🎟️</span>}
                 </div>
-              ))}
+                <div>
+                  <p className="checkin-event-title">{currentEvent?.title || 'Select an event'}</p>
+                  {currentEvent && (
+                    <p className="checkin-event-meta">
+                      📅 {new Date(currentEvent.date).toLocaleDateString('en-NG', { month:'short', day:'numeric', year:'numeric' })}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {events.length > 1 && (
+                <select className="checkin-select" value={activeEvent} onChange={e => setActiveEvent(e.target.value)}>
+                  {events.map(ev => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
+                </select>
+              )}
             </div>
-            <div className="feed-footer">
-              <p className="feed-summary">{stats.checkedIn} checked in · {stats.invalidScans} invalid</p>
-            </div>
-          </div>
 
-        </div>
+            {/* Stats */}
+            {stats && (
+              <div className="checkin-stats">
+                {[
+                  { icon:'✅', label:'Checked In',    value: stats.checkedIn     ?? 0,  color:'#4ade80' },
+                  { icon:'🎟️', label:'Total Expected', value: stats.totalExpected ?? 0,  color:'#fff' },
+                  { icon:'⏳', label:'Remaining',      value: stats.remaining     ?? 0,  color:'#facc15' },
+                  { icon:'📊', label:'Check-In Rate',  value: `${stats.checkInRate ?? 0}%`, color:'#fb923c' },
+                ].map(s => (
+                  <div key={s.label} className="checkin-stat">
+                    <span className="checkin-stat-icon">{s.icon}</span>
+                    <div>
+                      <p className="checkin-stat-val" style={{ color: s.color }}>{s.value}</p>
+                      <p className="checkin-stat-lbl">{s.label}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Main grid */}
+            <div className="checkin-main">
+
+              {/* Manual check-in */}
+              <div className="scanner-panel">
+                <h2 className="scanner-title">Manual Check-In</h2>
+                <p style={{ color:'rgba(255,255,255,.5)', fontSize:13, marginBottom:20 }}>
+                  Type the ticket ID (e.g. QT-1234567-ABC123) or scan the QR code with a barcode scanner plugged into your device.
+                </p>
+
+                <form onSubmit={checkIn} style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                  <input
+                    ref={inputRef}
+                    className="input"
+                    placeholder="QT-1234567-ABC123"
+                    value={ticketId}
+                    onChange={e => setTicketId(e.target.value.toUpperCase())}
+                    style={{ fontFamily:'monospace', fontSize:16, letterSpacing:1, textTransform:'uppercase' }}
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-full"
+                    disabled={checking || !ticketId.trim() || !activeEvent}
+                    style={{ padding:14, fontSize:15 }}
+                  >
+                    {checking ? '⏳ Checking...' : '✅ Check In Attendee'}
+                  </button>
+                </form>
+
+                {/* Result */}
+                {result && (
+                  <div style={{
+                    marginTop: 20,
+                    padding: '18px 20px',
+                    borderRadius: 16,
+                    background: result.valid ? 'rgba(74,222,128,.12)' : 'rgba(248,113,113,.12)',
+                    border: `1.5px solid ${result.valid ? '#4ade80' : '#f87171'}`,
+                    textAlign: 'center'
+                  }}>
+                    <p style={{ fontSize: 40, marginBottom: 8 }}>{result.valid ? '✅' : '❌'}</p>
+                    <p style={{ fontSize: 17, fontWeight: 700, color: result.valid ? '#4ade80' : '#f87171', marginBottom: 4 }}>
+                      {result.valid ? 'Check-In Successful!' : 'Invalid Ticket'}
+                    </p>
+                    {result.valid
+                      ? <p style={{ color:'rgba(255,255,255,.7)', fontSize:15 }}>Welcome, <strong>{result.name}</strong>!</p>
+                      : <p style={{ color:'rgba(255,255,255,.5)', fontSize:14 }}>{result.reason}</p>
+                    }
+                  </div>
+                )}
+
+                <div style={{ marginTop:24, padding:'14px 16px', background:'rgba(255,255,255,.04)', borderRadius:12, fontSize:13, color:'rgba(255,255,255,.4)', lineHeight:1.6 }}>
+                  💡 <strong style={{ color:'rgba(255,255,255,.6)' }}>Tip:</strong> When an attendee shows their QR code, you can use any barcode/QR scanner device — it will type the ticket ID into the box automatically and submit. Or type it manually.
+                </div>
+              </div>
+
+              {/* Live feed */}
+              <div className="scan-feed">
+                <div className="feed-header">
+                  <h2 className="feed-title">Recent Check-Ins</h2>
+                  <span className="badge badge-dark">{feed.length}</span>
+                </div>
+                <div className="feed-list">
+                  {feed.length === 0 && (
+                    <p style={{ color:'rgba(255,255,255,.3)', fontSize:13, textAlign:'center', padding:'24px 0' }}>
+                      No check-ins yet
+                    </p>
+                  )}
+                  {feed.map((entry, i) => (
+                    <div key={i} className="feed-entry valid">
+                      <span className="feed-icon">✅</span>
+                      <div className="feed-info">
+                        <p className="feed-name">{entry.name}</p>
+                        <p className="feed-id">{entry.id}</p>
+                      </div>
+                      <span className="feed-time">
+                        {new Date(entry.checkedInAt).toLocaleTimeString('en-NG', { hour:'2-digit', minute:'2-digit' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
