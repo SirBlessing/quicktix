@@ -139,7 +139,7 @@ export default function CheckoutPage() {
               <div className="order-lines">
                 <div className="order-line">
                   <span>{isFree ? 'Registration' : `Ticket × ${qty}`}</span>
-                  <span style={{color: isFree ? '#059669', fontWeight:700}}>{isFree ? 'FREE' : `₦${sub.toLocaleString()}`}</span>
+                  <span style={{color: isFree ? '#059669' : 'inherit', fontWeight: 700}}>{isFree ? 'FREE' : `₦${sub.toLocaleString()}`}</span>
                 </div>
                 {!isFree && (
                   <div className="order-line muted">
