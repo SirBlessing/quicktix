@@ -656,3 +656,71 @@ td { padding:12px 14px; border-bottom:1px solid var(--g50); color:var(--txt2); }
   line-height: 1.6;
   margin-bottom: 28px;
 }
+
+/* ── Paste these lines at the very bottom of your App.css ── */
+
+@media (max-width: 768px) {
+
+  /* General */
+  .container    { padding: 0 16px; }
+  .container-sm { padding: 0 16px; }
+  .page         { padding-top: 16px; }
+
+  /* Event page */
+  .event-banner { height: 200px; }
+  .event-grid   { grid-template-columns: 1fr; margin-top: -16px; }
+  .event-h1     { font-size: 22px; }
+
+  /* Explore */
+  .events-grid  { grid-template-columns: 1fr; gap: 14px; }
+
+  /* Checkout */
+  .checkout-grid { grid-template-columns: 1fr; gap: 16px; }
+
+  /* Dashboard */
+  .dash-header-inner  { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .dash-header-actions { display: flex; gap: 8px; }
+  .dash-stats-grid    { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-card__value   { font-size: 26px; }
+  .mgmt-grid          { grid-template-columns: 1fr; }
+  .recent-right       { display: none; }
+
+  /* Check-in page */
+  .checkin-body  { padding: 16px; }
+  .checkin-main  { grid-template-columns: 1fr; gap: 16px; }
+  .checkin-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .checkin-stat  { padding: 12px; }
+  .checkin-stat-val { font-size: 22px; }
+  .checkin-event-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .checkin-select    { width: 100%; }
+
+  /* Ticket confirm */
+  .ticket-card  { margin: 0 4px; }
+  .ticket-meta-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Navbar */
+  .nav-links { gap: 8px; }
+  .nav-links a, .nav-links button { font-size: 13px; padding: 7px 12px; }
+
+  /* Auth pages */
+  .auth-page { padding: 20px 16px; min-height: 100vh; }
+  .auth-card { padding: 24px 20px; max-width: 100%; }
+
+  /* Create / Edit event */
+  .form-row { flex-direction: column; gap: 0; }
+  .steps    { gap: 8px; }
+  .step-item span:last-child { display: none; }
+
+  /* Widget share link */
+  .widget-link-input { font-size: 11px; }
+
+  /* Buttons */
+  .btn-full { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .dash-stats-grid  { grid-template-columns: 1fr; }
+  .checkin-stats    { grid-template-columns: 1fr 1fr; }
+  .event-grid       { margin-top: -12px; }
+  .ticket-meta-grid { grid-template-columns: 1fr; }
+}
