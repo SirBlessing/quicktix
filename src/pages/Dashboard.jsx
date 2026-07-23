@@ -80,7 +80,7 @@ export default function Dashboard() {
     <div style={{ minHeight:'100vh', background:'#F7F5FF', fontFamily:"'DM Sans',sans-serif" }}>
 
       {/* Top bar */}
-      <header style={{ background:'#0D0B1A', padding:'0 32px', height:64, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <header style={{ background:'#0D0B1A', padding:'0 16px', height:64, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           <div style={{ width:36, height:36, background:'#FF5C00', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, color:'#fff', fontSize:18 }}>Q</div>
           <span style={{ color:'#fff', fontWeight:800, fontSize:18 }}>QuickTix</span>
